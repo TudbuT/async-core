@@ -1,0 +1,14 @@
+[package]
+name = "async-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["TudbuT"]
+
+[dependencies]
+
+[dev-dependencies]
+microasync = "0.4"
+microasync-rt = { path = "../microasync-rt" }
+
+[features]
+no_std = []
