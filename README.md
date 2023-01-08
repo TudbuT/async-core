@@ -25,3 +25,16 @@ following on my TODO list:
   crates.io didn't mandate a working compilation for a crate to be uploaded.).
 - More utility functions runtimes need to implement
 - Slightly better documentation
+
+If anything is missing that you need *now*, make an issue! If you are the maintainer of a
+runtime, please reach out and we can work out an implementation for your runtime and add
+more to the standard.
+
+## Warning: This is subject to rapid change.
+
+This library is not stable, and there will be drastic changes, potential renames of
+functions, etc. That also means if you see anything you have an issue with, tell me, and
+there is still a high chance of me accepting your suggestion.
+
+Releases every week if there are enough improvements until things stabelize some more,
+then releases once changes have accumulated.
