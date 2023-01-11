@@ -1,14 +1,17 @@
 [package]
 name = "async-core"
-version = "0.1.0"
+version = "0.3.0"
 edition = "2021"
-authors = ["TudbuT"]
+repository = "https://github.com/tudbut/async-core"
+license = "MIT"
+description = "A standard for async runtimes"
+categories = ["async", "no-std"]
 
 [dependencies]
 
 [dev-dependencies]
 microasync = "0.4"
-microasync-rt = { path = "../microasync-rt" }
+microasync-rt = { path = "../microasync-rt", version = "0.2" }
 
 [features]
 no_std = []
