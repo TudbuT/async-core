@@ -1,0 +1,9 @@
+[package]
+name = "async-core-examples"
+version = "0.0.0"
+publish = false
+
+[dependencies]
+microasync = "0.4"
+microasync-rt = "0.2"
+async-core = { path = ".." }
