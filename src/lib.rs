@@ -9,8 +9,6 @@
 //! safe API wrapping threads. I assume you know what you are doing if you are using this with
 //! multiple threads in a no_std environment. Please do not share runtimes between threads this way.
 //!
-//! SAFETY: DO NOT USE process::exit!
-//!
 //! ## How to use a runtime:
 //!
 //! - Import the re-exported Runtime and get_current_runtime.
@@ -59,7 +57,7 @@ use core::{mem, mem::ManuallyDrop, panic};
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + 'a>>;
 #[inline]
-pub fn prep<'a, T>(future: impl Future<Output = T> + 'a) -> BoxFuture<'a, T> {
+pub fn prep<'a, T>(future: impl Future<Output = T> + 'a + Send) -> BoxFuture<'a, T> {
     Box::pin(future)
 }
 

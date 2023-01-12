@@ -8,13 +8,30 @@ use core::pin::Pin;
 use core::task::{Context, Poll};
 use core::time::Duration;
 
-pub struct SpawnedFuture<'a>(u64, &'a dyn InternalRuntime);
+/// Stable wrapper of `!` type for the Stop struct.
+pub enum Never {}
+impl Never { pub fn into(self) -> ! { loop {} } }
+
+/// A never-completing future, used in stopping the runtime. Returns stable equivalent of `!`
+pub struct Stop;
+
+impl Future for Stop {
+    type Output = Never;
+
+    fn poll(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
+        Poll::Pending // Return access to the runtime immediately
+    }
+}
+
+/// Future equivalent of a join handle
+pub struct SpawnedFuture<'a>(u64, &'a mut dyn InternalRuntime);
 
 impl<'a> Future for SpawnedFuture<'a> {
     type Output = ();
 
     fn poll(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
-        if self.1.contains(self.0) {
+        let me = self.get_mut();
+        if me.1.contains(me.0) {
             Poll::Pending
         } else {
             Poll::Ready(())
@@ -27,20 +44,20 @@ pub trait InternalRuntime {
     /// Adds a new future to the queue to be completed.
     fn push_boxed(&mut self, future: BoxFuture<'static, ()>) -> u64;
     /// Returns if a future by some ID is still running.
-    fn contains(&self, id: u64) -> bool;
+    fn contains(&mut self, id: u64) -> bool;
     /// Asynchronously sleeps
     fn sleep<'a>(&self, duration: Duration) -> BoxFuture<'a, ()>;
     /// Stops the runtime
-    fn stop(&mut self);
+    fn stop(&mut self) -> Stop;
 }
 /// Auto-trait with the methods that will actually be called by the users of the runtime.
 pub trait Runtime<'a> {
     /// Adds a new future to the queue to be completed.
-    fn push(&'a mut self, future: impl Future<Output = ()> + 'static) {
+    fn push(&mut self, future: impl Future<Output = ()> + 'static) {
         Runtime::push_boxed(self, Box::pin(future))
     }
     /// Adds a new future to the queue to be completed.
-    fn push_boxed(&'a mut self, future: BoxFuture<'static, ()>);
+    fn push_boxed(&mut self, future: BoxFuture<'static, ()>);
 
     /// Adds a new future to the queue to be completed and returns a future waiting for the added
     /// future's completion.
@@ -59,7 +76,7 @@ pub trait Runtime<'a> {
     }
 
     /// Stops the runtime. This does not exit the process.
-    fn stop(&mut self);
+    fn stop(&mut self) -> Stop;
 }
 
 /// Wrapper for anything that implements InternalRuntime, used to add a Runtime impl.
@@ -77,7 +94,7 @@ impl<'a> Deref for OwnedRuntime<'a> {
 }
 
 impl<'a> Runtime<'a> for RuntimeWrapper<'a> {
-    fn push_boxed(&'a mut self, future: BoxFuture<'static, ()>) {
+    fn push_boxed(&mut self, future: BoxFuture<'static, ()>) {
         InternalRuntime::push_boxed(self.0, future);
     }
 
@@ -89,13 +106,13 @@ impl<'a> Runtime<'a> for RuntimeWrapper<'a> {
         InternalRuntime::sleep(self.0, duration)
     }
 
-    fn stop(&mut self) {
+    fn stop(&mut self) -> Stop {
         InternalRuntime::stop(self.0)
     }
 }
 
 impl<'a, T: InternalRuntime + Sized> Runtime<'a> for T {
-    fn push_boxed(&'a mut self, future: BoxFuture<'static, ()>) {
+    fn push_boxed(&mut self, future: BoxFuture<'static, ()>) {
         InternalRuntime::push_boxed(self, future);
     }
 
@@ -107,7 +124,7 @@ impl<'a, T: InternalRuntime + Sized> Runtime<'a> for T {
         InternalRuntime::sleep(self, duration)
     }
 
-    fn stop(&mut self) {
+    fn stop(&mut self) -> Stop {
         InternalRuntime::stop(self)
     }
 }
